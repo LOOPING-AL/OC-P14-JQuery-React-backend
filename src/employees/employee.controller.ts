@@ -16,12 +16,13 @@ export class EmployeeController {
         createEmployeeDto,
       );
       return response.status(HttpStatus.CREATED).json({
+        statusCode: HttpStatus.CREATED,
         message: 'Employee has been created successfully',
         newEmployee,
       });
     } catch (err) {
       return response.status(HttpStatus.BAD_REQUEST).json({
-        statusCode: 400,
+        statusCode: HttpStatus.BAD_REQUEST,
         message: 'Error: Employee not created!',
         error: 'Bad Request',
       });

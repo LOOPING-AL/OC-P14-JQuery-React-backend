@@ -1,12 +1,15 @@
-import { Body, Controller, Get, HttpStatus, Post, Res } from '@nestjs/common';
+import { Body, Controller, HttpStatus, Post, Res } from '@nestjs/common';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { EmployeeService } from './employee.serice';
+import { GetEmployeeDto } from './dto/get-employees.dto';
+import { sortColumnType } from 'src/tools/utils';
+import employeeKey from './tools';
 
 @Controller('employee')
 export class EmployeeController {
   constructor(private readonly employeeService: EmployeeService) {}
 
-  @Post()
+  @Post('create')
   async createEmployee(
     @Res() response,
     @Body() createEmployeeDto: CreateEmployeeDto,
@@ -29,13 +32,43 @@ export class EmployeeController {
     }
   }
 
-  @Get()
-  async getEmployees(@Res() response) {
+  @Post('get')
+  async getEmployees(@Res() response, @Body() getEmployeeDto: GetEmployeeDto) {
     try {
       const employeeData = await this.employeeService.getAllEmployees();
+
+      const indexOfFirstElementToShow =
+        (getEmployeeDto.page - 1) * getEmployeeDto.numberOfElementToShow;
+      const indexOfLastElementToShow =
+        indexOfFirstElementToShow + getEmployeeDto.numberOfElementToShow;
+
+      const tableUpdate = employeeData
+        .filter((item) =>
+          employeeKey
+            .map((key) => item[key])
+            .toString()
+            .toLowerCase()
+            .includes(getEmployeeDto.search.toString().toLowerCase()),
+        )
+        .sort((a, b) =>
+          sortColumnType(
+            a,
+            b,
+            getEmployeeDto.sort?.column,
+            getEmployeeDto.sort?.sortType,
+          ),
+        );
+
+      const tableToShow = tableUpdate.slice(
+        indexOfFirstElementToShow,
+        indexOfLastElementToShow,
+      );
+      const tableUpdateLength = tableUpdate.length;
+      const tableTotalLength = employeeData.length;
+
       return response.status(HttpStatus.OK).json({
         message: 'All employees data found successfully',
-        employeeData,
+        body: { tableToShow, tableUpdateLength, tableTotalLength },
       });
     } catch (err) {
       return response.status(err.status).json(err.response);

@@ -1,15 +1,26 @@
 import { Body, Controller, HttpStatus, Post, Res } from '@nestjs/common';
-import { CreateEmployeeDto } from './dto/create-employee.dto';
-import { EmployeeService } from './employee.serice';
-import { GetEmployeeDto } from './dto/get-employees.dto';
 import { sortColumnType } from 'src/tools/utils';
+import { CreateEmployeeDto } from './dto/create-employee.dto';
+import { GetEmployeeDto } from './dto/get-employees.dto';
+import { EmployeeService } from './employee.serice';
 import employeeKey from './tools';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { CreateEmployee } from './entities/create-employee.entity';
+import { GetEmployees } from './entities/get-employee.entity';
 
+@ApiTags('employees')
 @Controller('employee')
 export class EmployeeController {
   constructor(private readonly employeeService: EmployeeService) {}
 
+  @ApiOperation({ summary: 'Create employee' })
   @Post('create')
+  @ApiResponse({
+    status: 201,
+    description: 'Succes: Employee created!',
+    type: CreateEmployee,
+  })
+  @ApiResponse({ status: 400, description: 'Error: Employee not created!' })
   async createEmployee(
     @Res() response,
     @Body() createEmployeeDto: CreateEmployeeDto,
@@ -26,12 +37,20 @@ export class EmployeeController {
     } catch (err) {
       return response.status(HttpStatus.BAD_REQUEST).json({
         statusCode: HttpStatus.BAD_REQUEST,
-        message: 'Error: Employee not created!',
+        message: err.response,
         error: 'Bad Request',
       });
     }
   }
 
+  @ApiOperation({ summary: 'Get employees' })
+  @ApiTags('employees')
+  @ApiResponse({
+    status: 201,
+    description: 'Succes: Get employees!',
+    type: GetEmployees,
+  })
+  @ApiResponse({ status: 400, description: 'Error: Employees not found!' })
   @Post('get')
   async getEmployees(@Res() response, @Body() getEmployeeDto: GetEmployeeDto) {
     try {
@@ -67,11 +86,16 @@ export class EmployeeController {
       const tableTotalLength = employeeData.length;
 
       return response.status(HttpStatus.OK).json({
+        statusCode: HttpStatus.OK,
         message: 'All employees data found successfully',
         body: { tableToShow, tableUpdateLength, tableTotalLength },
       });
     } catch (err) {
-      return response.status(err.status).json(err.response);
+      return response.status(err.status).json({
+        statusCode: HttpStatus.OK,
+        message: err.response,
+        error: 'Bad request',
+      });
     }
   }
 }
